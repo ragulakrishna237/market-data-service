@@ -1,15 +1,17 @@
 import asyncio
 import json
-import random
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Dict, Any
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from prometheus_client import Counter, Histogram, generate_latest
 
-app = FastAPI(title="Market Data Service")
+from app.refdata import REF_DATA, SYMBOLS
+from app.buffer import replay_from, get_global_last_seq
+from app.generator import start_generator, subscribe, unsubscribe, get_current_price
 
 # Metrics
 REQUEST_COUNT = Counter("http_requests_total", "Total HTTP Requests", ["method", "endpoint", "http_status"])
@@ -17,19 +19,22 @@ REQUEST_LATENCY = Histogram("http_request_duration_seconds", "HTTP Request Laten
 WS_CONNECTIONS = Counter("ws_connections_total", "Total WebSocket Connections")
 WS_MESSAGES_SENT = Counter("ws_messages_sent_total", "Total WebSocket Messages Sent")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Start the tick generator on startup
+    gen_task = asyncio.create_task(start_generator())
+    yield
+    # Clean up on shutdown
+    gen_task.cancel()
+
+app = FastAPI(title="Market Data Service", lifespan=lifespan)
+
 class SnapshotResponse(BaseModel):
     symbol: str
     last_price: float
     timestamp: str
+    last_seq: int
     reference_data: Dict[str, Any]
-
-# Mock data
-MOCK_PRICES = {
-    "AAPL": 150.0,
-    "GOOGL": 2800.0,
-    "MSFT": 300.0,
-    "TSLA": 700.0,
-}
 
 @app.middleware("http")
 async def monitor_requests(request, call_next):
@@ -55,50 +60,65 @@ async def metrics():
 @app.get("/snapshot/{symbol}", response_model=SnapshotResponse)
 async def get_snapshot(symbol: str):
     symbol = symbol.upper()
-    base_price = MOCK_PRICES.get(symbol, 100.0)
-    current_price = base_price * (1 + random.uniform(-0.02, 0.02))
+    if symbol not in SYMBOLS:
+        raise HTTPException(status_code=404, detail="Symbol not found")
+        
+    current_price = get_current_price(symbol)
     
     return SnapshotResponse(
         symbol=symbol,
-        last_price=round(current_price, 2),
+        last_price=round(current_price, 4),
         timestamp=datetime.now(timezone.utc).isoformat(),
-        reference_data={
-            "exchange": "NASDAQ",
-            "currency": "USD",
-            "tick_size": 0.01
-        }
+        last_seq=get_global_last_seq(),
+        reference_data=REF_DATA[symbol]
     )
+
+@app.get("/replay/{symbol}")
+async def replay(symbol: str, from_seq: int):
+    symbol = symbol.upper()
+    if symbol not in SYMBOLS:
+        raise HTTPException(status_code=404, detail="Symbol not found")
+        
+    try:
+        ticks = replay_from(symbol, from_seq)
+        return {"symbol": symbol, "ticks": ticks}
+    except ValueError as e:
+        raise HTTPException(status_code=416, detail=str(e))
+
+@app.get("/refdata")
+async def get_refdata():
+    return REF_DATA
 
 @app.websocket("/ws/stream")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     WS_CONNECTIONS.inc()
     
-    sequence_number = 0
-    symbols = list(MOCK_PRICES.keys())
+    queue = asyncio.Queue()
+    subscribe(queue)
+    
+    from app.config import config
+    from app.faults import FAULTS_INJECTED
+    start_time = asyncio.get_event_loop().time()
     
     try:
         while True:
-            sequence_number += 1
-            symbol = random.choice(symbols)
-            base_price = MOCK_PRICES[symbol]
-            current_price = base_price * (1 + random.uniform(-0.01, 0.01))
-            
-            tick = {
-                "sequence": sequence_number,
-                "symbol": symbol,
-                "price": round(current_price, 2),
-                "size": random.randint(1, 100) * 10,
-                "timestamp": datetime.now(timezone.utc).isoformat()
-            }
-            
-            await websocket.send_text(json.dumps(tick))
-            WS_MESSAGES_SENT.inc()
-            
-            # Simulate tick interval
-            await asyncio.sleep(random.uniform(0.1, 1.0))
-            
+            if config.fault_disconnect_after_s > 0:
+                now = asyncio.get_event_loop().time()
+                if now - start_time >= config.fault_disconnect_after_s:
+                    FAULTS_INJECTED.labels(type="disconnect").inc()
+                    await websocket.close(code=1008)
+                    break
+                    
+            try:
+                msg = await asyncio.wait_for(queue.get(), timeout=1.0)
+                await websocket.send_text(json.dumps(msg))
+                WS_MESSAGES_SENT.inc()
+            except asyncio.TimeoutError:
+                continue
     except WebSocketDisconnect:
         print("Client disconnected")
     except Exception as e:
         print(f"WebSocket error: {e}")
+    finally:
+        unsubscribe(queue)

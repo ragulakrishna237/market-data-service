@@ -1,0 +1,20 @@
+AAPL:
+  tick_size: 0.01
+  base_price: 150.0
+  exchange: "NASDAQ"
+  currency: "USD"
+GOOGL:
+  tick_size: 0.01
+  base_price: 2800.0
+  exchange: "NASDAQ"
+  currency: "USD"
+MSFT:
+  tick_size: 0.01
+  base_price: 300.0
+  exchange: "NASDAQ"
+  currency: "USD"
+TSLA:
+  tick_size: 0.01
+  base_price: 700.0
+  exchange: "NASDAQ"
+  currency: "USD"

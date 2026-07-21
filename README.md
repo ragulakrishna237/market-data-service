@@ -1,38 +1,68 @@
-# Market Data Service
+# market-data-service
 
-A standalone FastAPI service providing mock market data.
+[![CI](https://github.com/your-org/market-data-service/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/market-data-service/actions)
 
-## Features
+## Role in the Architecture
+This service acts as **"the vendor"** — a mock external market-data provider for the quant-platform ecosystem. It represents a third-party data feed that the platform consumes but does not control.
 
-- `GET /snapshot/{symbol}`: Returns the last price and reference data for a given symbol.
-- `WS /ws/stream`: WebSocket endpoint streaming mock market data ticks with sequence numbers.
-- `GET /health`: Health check endpoint.
-- `GET /metrics`: Prometheus metrics endpoint.
+It is **stateless by design** and runs in-memory. It can be killed and restarted freely.
+
+## Message Schema
+
+Ticks emitted over WebSocket follow this structure:
+```json
+{
+  "type": "tick",
+  "symbol": "AAPL",
+  "price": 150.25,
+  "size": 100,
+  "seq": 1234,
+  "ts_event": "2026-07-20T10:00:00.000Z"
+}
+```
+
+Heartbeats are sent when the market is idle (e.g., every 2s):
+```json
+{
+  "type": "heartbeat",
+  "seq": 1234,
+  "ts": "2026-07-20T10:00:02.000Z"
+}
+```
 
 ## Running Locally
 
-1. Create a virtual environment and install dependencies:
-   ```bash
-   python -m venv venv
-   venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
+### Virtual Environment (Windows)
+```powershell
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
 
-2. Run the service:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
+### Virtual Environment (Unix/macOS)
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
 
-3. Access the API documentation at `http://localhost:8000/docs`.
+## Example Usage
 
-## Running with Docker
+**Snapshot via curl:**
+```bash
+curl http://localhost:8000/snapshot/AAPL
+```
 
-1. Build the image:
-   ```bash
-   docker build -t market-data-service .
-   ```
+**Stream via websocat:**
+```bash
+websocat ws://localhost:8000/ws/stream
+```
 
-2. Run the container:
-   ```bash
-   docker run -p 8000:8000 market-data-service
-   ```
+## Features
+- `GET /snapshot/{symbol}`: Returns the last price, reference data, and sequence number for a symbol.
+- `WS /ws/stream`: WebSocket endpoint streaming ticks and heartbeats.
+- `GET /replay/{symbol}?from_seq=N`: Replay missing ticks from a ring buffer.
+- `GET /health`: Health check endpoint.
+- `GET /metrics`: Prometheus metrics endpoint.
