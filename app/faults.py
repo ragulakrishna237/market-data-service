@@ -1,6 +1,6 @@
 import random
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, Tuple
+from datetime import datetime, timedelta, timezone
+from typing import Any
 
 from prometheus_client import Counter
 
@@ -10,7 +10,7 @@ FAULTS_INJECTED = Counter("faults_injected_total", "Total faults injected", ["ty
 
 _ticks_since_start = 0
 
-def apply_tick_faults(tick: Dict[str, Any], global_seq: int) -> Tuple[Dict[str, Any], int]:
+def apply_tick_faults(tick: dict[str, Any], global_seq: int) -> tuple[dict[str, Any], int]:
     global _ticks_since_start
     _ticks_since_start += 1
     

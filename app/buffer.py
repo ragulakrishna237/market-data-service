@@ -1,10 +1,10 @@
 from collections import deque
-from typing import Dict, List, Any
+from typing import Any
 
 # Map symbol -> deque
-_buffers: Dict[str, deque] = {}
+_buffers: dict[str, deque] = {}
 # Map symbol -> max seq that was dropped
-_dropped_seqs: Dict[str, int] = {}
+_dropped_seqs: dict[str, int] = {}
 
 # Global seq track
 _global_last_seq = 0
@@ -15,17 +15,16 @@ def get_buffer(symbol: str) -> deque:
         _dropped_seqs[symbol] = 0
     return _buffers[symbol]
 
-def add_tick(symbol: str, tick: Dict[str, Any]):
+def add_tick(symbol: str, tick: dict[str, Any]):
     global _global_last_seq
     buf = get_buffer(symbol)
     if len(buf) == buf.maxlen:
         oldest = buf[0]
         _dropped_seqs[symbol] = oldest["seq"]
     buf.append(tick)
-    if tick["seq"] > _global_last_seq:
-        _global_last_seq = tick["seq"]
+    _global_last_seq = max(_global_last_seq, tick["seq"])
 
-def replay_from(symbol: str, from_seq: int) -> List[Dict[str, Any]]:
+def replay_from(symbol: str, from_seq: int) -> list[dict[str, Any]]:
     buf = get_buffer(symbol)
     dropped_seq = _dropped_seqs.get(symbol, 0)
     

@@ -1,6 +1,8 @@
 import pytest
+
 from app.config import config
 from app.faults import apply_tick_faults
+
 
 @pytest.fixture(autouse=True)
 def reset_faults():
@@ -19,10 +21,10 @@ def test_gap_fault():
     
     base_tick = {"type": "tick", "price": 100.0}
     
-    tick1, inc1 = apply_tick_faults(base_tick.copy(), 100)
+    _tick1, inc1 = apply_tick_faults(base_tick.copy(), 100)
     assert inc1 == 0
     
-    tick2, inc2 = apply_tick_faults(base_tick.copy(), 101)
+    _tick2, inc2 = apply_tick_faults(base_tick.copy(), 101)
     assert inc2 == 0
     
     tick3, inc3 = apply_tick_faults(base_tick.copy(), 102)
@@ -42,6 +44,6 @@ def test_stale_ts_fault():
     config.fault_stale_ts_rate = 1.0  # Always stale
     
     base_tick = {"type": "tick", "price": 100.0}
-    tick, inc = apply_tick_faults(base_tick.copy(), 100)
+    tick, _inc = apply_tick_faults(base_tick.copy(), 100)
     
     assert "ts_event" in tick

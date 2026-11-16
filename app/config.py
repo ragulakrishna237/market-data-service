@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     port: int = 8000
     tick_interval_min: float = 0.1

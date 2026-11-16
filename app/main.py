@@ -2,18 +2,23 @@ import asyncio
 import json
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import Dict, Any
+from typing import Any
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel
 from prometheus_client import Counter, Histogram, generate_latest
+from pydantic import BaseModel
 
+from app.buffer import get_global_last_seq, replay_from
+from app.fi_generator import (
+    get_fi_snapshot,
+    start_fi_generator,
+    subscribe_fi,
+    unsubscribe_fi,
+)
+from app.fi_refdata import FI_INSTRUMENTS, FI_REF_DATA
+from app.generator import get_current_price, start_generator, subscribe, unsubscribe
 from app.refdata import REF_DATA, SYMBOLS
-from app.buffer import replay_from, get_global_last_seq
-from app.generator import start_generator, subscribe, unsubscribe, get_current_price
-from app.fi_refdata import FI_REF_DATA, FI_INSTRUMENTS
-from app.fi_generator import get_fi_snapshot, start_fi_generator, subscribe_fi, unsubscribe_fi
 
 # Metrics
 REQUEST_COUNT = Counter("http_requests_total", "Total HTTP Requests", ["method", "endpoint", "http_status"])
@@ -38,7 +43,7 @@ class SnapshotResponse(BaseModel):
     last_price: float
     timestamp: str
     last_seq: int
-    reference_data: Dict[str, Any]
+    reference_data: dict[str, Any]
 
 @app.middleware("http")
 async def monitor_requests(request, call_next):
@@ -120,7 +125,7 @@ async def fi_websocket_endpoint(websocket: WebSocket):
                 continue
     except WebSocketDisconnect:
         print("FI client disconnected")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — keep the socket from killing the process
         print(f"FI WebSocket error: {e}")
     finally:
         unsubscribe_fi(queue)
@@ -154,7 +159,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 continue
     except WebSocketDisconnect:
         print("Client disconnected")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — keep the socket from killing the process
         print(f"WebSocket error: {e}")
     finally:
         unsubscribe(queue)

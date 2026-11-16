@@ -1,13 +1,13 @@
 """Post-receipt quality checks and Security Master enrichment."""
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from app.fi_refdata import FI_REF_DATA
 
 
-def validate_fi_message(msg: Dict[str, Any], last_seq: Optional[int] = None) -> List[str]:
-    issues: List[str] = []
+def validate_fi_message(msg: dict[str, Any], last_seq: int | None = None) -> list[str]:
+    issues: list[str] = []
     msg_type = msg.get("type")
     if msg_type not in {"tick", "snapshot", "heartbeat"}:
         issues.append("unknown_type")
@@ -42,7 +42,7 @@ def validate_fi_message(msg: Dict[str, Any], last_seq: Optional[int] = None) -> 
     return issues
 
 
-def enrich_security_master(msg: Dict[str, Any], master: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+def enrich_security_master(msg: dict[str, Any], master: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
     if msg.get("type") not in {"tick", "snapshot"}:
         return master
     instrument_id = msg["instrument_id"]

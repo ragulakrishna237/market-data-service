@@ -1,12 +1,12 @@
 import asyncio
 import random
 from datetime import datetime, timezone
-from typing import Dict, Any
+from typing import Any
 
-from app.refdata import REF_DATA, SYMBOLS
-from app.buffer import add_tick, get_global_last_seq
+from app.buffer import add_tick
 from app.config import config
-from app.faults import apply_tick_faults, FAULTS_INJECTED
+from app.faults import FAULTS_INJECTED, apply_tick_faults
+from app.refdata import REF_DATA, SYMBOLS
 
 # We need a way to broadcast ticks to all WS connections
 _subscribers = []
@@ -18,7 +18,7 @@ def unsubscribe(queue: asyncio.Queue):
     if queue in _subscribers:
         _subscribers.remove(queue)
 
-async def _broadcast(msg: Dict[str, Any]):
+async def _broadcast(msg: dict[str, Any]):
     for q in _subscribers:
         try:
             q.put_nowait(msg)
@@ -47,7 +47,7 @@ async def start_generator():
             continue
             
         symbol = random.choice(SYMBOLS)
-        base_price = REF_DATA[symbol]["base_price"]
+        REF_DATA[symbol]["base_price"]
         tick_size = REF_DATA[symbol]["tick_size"]
         
         # Random walk
@@ -80,7 +80,6 @@ async def start_generator():
         await asyncio.sleep(interval)
 
 async def _heartbeat_loop():
-    global _last_tick_time
     while True:
         await asyncio.sleep(config.heartbeat_interval_s)
         now = asyncio.get_event_loop().time()

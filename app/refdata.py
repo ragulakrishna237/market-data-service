@@ -1,7 +1,9 @@
-import yaml
-from typing import Dict, Any
+from typing import Any
 
-def load_refdata(path: str = "refdata.yaml") -> Dict[str, Dict[str, Any]]:
+import yaml
+
+
+def load_refdata(path: str = "refdata.yaml") -> dict[str, dict[str, Any]]:
     with open(path, "r") as f:
         return yaml.safe_load(f)
 

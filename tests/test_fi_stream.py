@@ -34,19 +34,18 @@ def test_fi_refdata_and_snapshot():
 
 
 def test_ws_fi_seq_increasing_separate_from_equity():
-    with TestClient(app) as live:
-        with live.websocket_connect("/ws/fi") as websocket:
-            last_seq = -1
-            ticks = 0
-            while ticks < 3:
-                msg = json.loads(websocket.receive_text())
-                if msg.get("type") != "tick":
-                    continue
-                assert msg["instrument_id"] in FI_INSTRUMENTS
-                assert "yield" in msg
-                assert msg["seq"] > last_seq
-                last_seq = msg["seq"]
-                ticks += 1
+    with TestClient(app) as live, live.websocket_connect("/ws/fi") as websocket:
+        last_seq = -1
+        ticks = 0
+        while ticks < 3:
+            msg = json.loads(websocket.receive_text())
+            if msg.get("type") != "tick":
+                continue
+            assert msg["instrument_id"] in FI_INSTRUMENTS
+            assert "yield" in msg
+            assert msg["seq"] > last_seq
+            last_seq = msg["seq"]
+            ticks += 1
 
 
 def test_quality_and_security_master_enrichment():

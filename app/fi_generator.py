@@ -3,13 +3,13 @@
 import asyncio
 import random
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any
 
 from app.buffer import add_tick
 from app.config import config
 from app.fi_refdata import FI_INSTRUMENTS, FI_REF_DATA
 
-_fi_subscribers: List[asyncio.Queue] = []
+_fi_subscribers: list[asyncio.Queue] = []
 _fi_seq = 0
 _fi_prices = {sym: data["base_price"] for sym, data in FI_REF_DATA.items()}
 _fi_yields = {sym: data["base_yield"] for sym, data in FI_REF_DATA.items()}
@@ -24,7 +24,7 @@ def unsubscribe_fi(queue: asyncio.Queue) -> None:
         _fi_subscribers.remove(queue)
 
 
-async def _broadcast(msg: Dict[str, Any]) -> None:
+async def _broadcast(msg: dict[str, Any]) -> None:
     for queue in _fi_subscribers:
         try:
             queue.put_nowait(msg)
@@ -36,7 +36,7 @@ def get_fi_seq() -> int:
     return _fi_seq
 
 
-def get_fi_snapshot(instrument_id: str) -> Dict[str, Any]:
+def get_fi_snapshot(instrument_id: str) -> dict[str, Any]:
     ref = FI_REF_DATA[instrument_id]
     return {
         "type": "snapshot",

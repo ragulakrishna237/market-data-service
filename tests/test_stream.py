@@ -1,10 +1,9 @@
 import json
-import pytest
-from fastapi.testclient import TestClient
-from websockets.exceptions import ConnectionClosed
 
-from app.main import app
+from fastapi.testclient import TestClient
+
 from app.config import config
+from app.main import app
 
 client = TestClient(app)
 

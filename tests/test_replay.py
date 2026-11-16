@@ -1,8 +1,7 @@
-import pytest
 from fastapi.testclient import TestClient
 
+from app.buffer import _dropped_seqs, get_buffer
 from app.main import app
-from app.buffer import _buffers, _dropped_seqs, get_buffer
 
 client = TestClient(app)
 
