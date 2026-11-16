@@ -28,8 +28,7 @@ def test_gap_fault():
     assert inc2 == 0
     
     tick3, inc3 = apply_tick_faults(base_tick.copy(), 102)
-    assert inc3 == 1  # Gap applied!
-    assert tick3["seq"] == 103 # sequence skipped!
+    assert inc3 == 1  # Gap applied; generator adds this to seq.
 
 def test_bad_tick_fault():
     config.fault_bad_tick_rate = 1.0  # Always bad
