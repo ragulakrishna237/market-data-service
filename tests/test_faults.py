@@ -27,7 +27,7 @@ def test_gap_fault():
     _tick2, inc2 = apply_tick_faults(base_tick.copy(), 101)
     assert inc2 == 0
     
-    tick3, inc3 = apply_tick_faults(base_tick.copy(), 102)
+    _tick3, inc3 = apply_tick_faults(base_tick.copy(), 102)
     assert inc3 == 1  # Gap applied; generator adds this to seq.
 
 def test_bad_tick_fault():
