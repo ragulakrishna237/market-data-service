@@ -1,10 +1,4 @@
-from fastapi.testclient import TestClient
-
-from app.main import app
-
-client = TestClient(app)
-
-def test_snapshot_known_symbol():
+def test_snapshot_known_symbol(client):
     response = client.get("/snapshot/AAPL")
     assert response.status_code == 200
     data = response.json()
@@ -14,6 +8,7 @@ def test_snapshot_known_symbol():
     assert data["last_seq"] >= 0
     assert "reference_data" in data
 
-def test_snapshot_unknown_symbol():
+
+def test_snapshot_unknown_symbol(client):
     response = client.get("/snapshot/UNKNOWN")
     assert response.status_code == 404

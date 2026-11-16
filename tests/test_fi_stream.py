@@ -1,16 +1,11 @@
 import json
 
-from fastapi.testclient import TestClient
-
 from app.fi_quality import enrich_security_master, validate_fi_message
 from app.fi_refdata import FI_INSTRUMENTS, FI_REF_DATA
-from app.main import app
 from app.refdata import SYMBOLS
 
-client = TestClient(app)
 
-
-def test_equity_refdata_unchanged():
+def test_equity_refdata_unchanged(client):
     assert "AAPL" in SYMBOLS
     assert "AAPL" not in FI_REF_DATA
     response = client.get("/refdata")
@@ -19,7 +14,7 @@ def test_equity_refdata_unchanged():
     assert "UST_10Y" not in response.json()
 
 
-def test_fi_refdata_and_snapshot():
+def test_fi_refdata_and_snapshot(client):
     response = client.get("/fi/refdata")
     assert response.status_code == 200
     body = response.json()
@@ -33,8 +28,8 @@ def test_fi_refdata_and_snapshot():
     assert data["reference_data"]["cusip"]
 
 
-def test_ws_fi_seq_increasing_separate_from_equity():
-    with TestClient(app) as live, live.websocket_connect("/ws/fi") as websocket:
+def test_ws_fi_seq_increasing_separate_from_equity(client):
+    with client.websocket_connect("/ws/fi") as websocket:
         last_seq = -1
         ticks = 0
         while ticks < 3:
@@ -60,7 +55,6 @@ def test_quality_and_security_master_enrichment():
         "seq": 1,
         "ts_event": "2099-01-01T00:00:00+00:00",
     }
-    # Future ts is not stale; yield and price ok.
     assert validate_fi_message(good) == []
     bad = {**good, "price": -1, "yield": 2.5, "seq": 0}
     issues = validate_fi_message(bad, last_seq=1)
