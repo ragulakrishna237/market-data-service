@@ -1,0 +1,127 @@
+# Synthetic Fixed Income Security Master slice. Equity symbols stay in refdata.yaml.
+
+UST_2Y:
+  asset_class: treasury
+  instrument_id: UST_2Y
+  cusip: "91282CFA4"
+  isin: "US91282CFA43"
+  description: "T 4.25 05/31/26"
+  coupon: 4.25
+  maturity: "2026-05-31"
+  tick_size: 0.00390625
+  base_price: 99.75
+  base_yield: 0.0420
+  currency: USD
+  market: UST
+
+UST_10Y:
+  asset_class: treasury
+  instrument_id: UST_10Y
+  cusip: "91282CJL6"
+  isin: "US91282CJL64"
+  description: "T 4.25 11/15/34"
+  coupon: 4.25
+  maturity: "2034-11-15"
+  tick_size: 0.015625
+  base_price: 98.50
+  base_yield: 0.0435
+  currency: USD
+  market: UST
+
+UST_30Y:
+  asset_class: treasury
+  instrument_id: UST_30Y
+  cusip: "912810TW8"
+  isin: "US912810TW80"
+  description: "T 4.50 02/15/54"
+  coupon: 4.50
+  maturity: "2054-02-15"
+  tick_size: 0.03125
+  base_price: 97.25
+  base_yield: 0.0460
+  currency: USD
+  market: UST
+
+FNCL_5_5:
+  asset_class: agency_mbs
+  instrument_id: FNCL_5_5
+  cusip: "3140X5ABC"
+  isin: "US3140X5ABC1"
+  description: "FNCL 5.5 TBA"
+  coupon: 5.50
+  maturity: "2054-06-01"
+  tick_size: 0.015625
+  base_price: 101.12
+  base_yield: 0.0510
+  currency: USD
+  market: MBS
+
+G2SF_5_0:
+  asset_class: agency_mbs
+  instrument_id: G2SF_5_0
+  cusip: "36202ABC1"
+  isin: "US36202ABC13"
+  description: "G2SF 5.0 TBA"
+  coupon: 5.00
+  maturity: "2054-06-01"
+  tick_size: 0.015625
+  base_price: 99.40
+  base_yield: 0.0505
+  currency: USD
+  market: MBS
+
+USD_IRS_10Y:
+  asset_class: swap
+  instrument_id: USD_IRS_10Y
+  cusip: "SWAP10Y001"
+  isin: "XS000SWAP10Y"
+  description: "USD SOFR 10Y IRS"
+  coupon: 0.0
+  maturity: "2034-06-03"
+  tick_size: 0.0001
+  base_price: 100.00
+  base_yield: 0.0395
+  currency: USD
+  market: IRS
+
+USD_CAP_3Y_4P00:
+  asset_class: cap
+  instrument_id: USD_CAP_3Y_4P00
+  cusip: "CAP3Y40001"
+  isin: "XS000CAP3Y40"
+  description: "USD 3Y 4.00% cap"
+  coupon: 4.00
+  maturity: "2027-06-03"
+  tick_size: 0.0001
+  base_price: 0.85
+  base_yield: 0.0400
+  currency: USD
+  market: VOL
+
+USD_FLR_3Y_2P50:
+  asset_class: floor
+  instrument_id: USD_FLR_3Y_2P50
+  cusip: "FLR3Y25001"
+  isin: "XS000FLR3Y25"
+  description: "USD 3Y 2.50% floor"
+  coupon: 2.50
+  maturity: "2027-06-03"
+  tick_size: 0.0001
+  base_price: 0.42
+  base_yield: 0.0250
+  currency: USD
+  market: VOL
+
+USD_SWN_5Y5Y:
+  asset_class: swaption
+  instrument_id: USD_SWN_5Y5Y
+  cusip: "SWN5Y5Y001"
+  isin: "XS000SWN5Y5Y"
+  description: "USD 5Yx5Y payer swaption"
+  coupon: 0.0
+  maturity: "2029-06-03"
+  tick_size: 0.0001
+  base_price: 1.15
+  base_yield: 0.0380
+  currency: USD
+  market: VOL

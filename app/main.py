@@ -12,6 +12,8 @@ from prometheus_client import Counter, Histogram, generate_latest
 from app.refdata import REF_DATA, SYMBOLS
 from app.buffer import replay_from, get_global_last_seq
 from app.generator import start_generator, subscribe, unsubscribe, get_current_price
+from app.fi_refdata import FI_REF_DATA, FI_INSTRUMENTS
+from app.fi_generator import get_fi_snapshot, start_fi_generator, subscribe_fi, unsubscribe_fi
 
 # Metrics
 REQUEST_COUNT = Counter("http_requests_total", "Total HTTP Requests", ["method", "endpoint", "http_status"])
@@ -23,9 +25,11 @@ WS_MESSAGES_SENT = Counter("ws_messages_sent_total", "Total WebSocket Messages S
 async def lifespan(app: FastAPI):
     # Start the tick generator on startup
     gen_task = asyncio.create_task(start_generator())
+    fi_task = asyncio.create_task(start_fi_generator())
     yield
     # Clean up on shutdown
     gen_task.cancel()
+    fi_task.cancel()
 
 app = FastAPI(title="Market Data Service", lifespan=lifespan)
 
@@ -88,6 +92,38 @@ async def replay(symbol: str, from_seq: int):
 @app.get("/refdata")
 async def get_refdata():
     return REF_DATA
+
+@app.get("/fi/refdata")
+async def get_fi_refdata():
+    return FI_REF_DATA
+
+@app.get("/fi/snapshot/{instrument_id}")
+async def get_fi_snapshot_endpoint(instrument_id: str):
+    instrument_id = instrument_id.upper()
+    if instrument_id not in FI_INSTRUMENTS:
+        raise HTTPException(status_code=404, detail="Instrument not found")
+    return get_fi_snapshot(instrument_id)
+
+@app.websocket("/ws/fi")
+async def fi_websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    WS_CONNECTIONS.inc()
+    queue = asyncio.Queue()
+    subscribe_fi(queue)
+    try:
+        while True:
+            try:
+                msg = await asyncio.wait_for(queue.get(), timeout=1.0)
+                await websocket.send_text(json.dumps(msg))
+                WS_MESSAGES_SENT.inc()
+            except asyncio.TimeoutError:
+                continue
+    except WebSocketDisconnect:
+        print("FI client disconnected")
+    except Exception as e:
+        print(f"FI WebSocket error: {e}")
+    finally:
+        unsubscribe_fi(queue)
 
 @app.websocket("/ws/stream")
 async def websocket_endpoint(websocket: WebSocket):

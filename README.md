@@ -1,5 +1,20 @@
 # market-data-service
 
+## Fixed Income Market Data Simulation
+
+Additive FI path. Equity `/ws/stream`, `/snapshot/{symbol}`, and `refdata.yaml` are unchanged.
+
+- `fi_refdata.yaml` — synthetic Treasuries, agency MBS, IRS, caps/floors, swaptions (Security Master fields: CUSIP, ISIN, coupon, maturity).
+- `WS /ws/fi` — sequenced FI ticks (`seq`, `ts_event`, `price`, `yield`) on a separate bus so equity clients do not see them.
+- `GET /fi/refdata` and `GET /fi/snapshot/{instrument_id}`.
+- `examples/fi_consumer.py` — post-receipt pattern: validate sequence/price/yield/staleness, then upsert an in-memory Security Master. Vendor ticks are not the master.
+
+```bash
+websocat ws://localhost:8000/ws/fi
+python examples/fi_consumer.py
+```
+
+
 [![CI](https://github.com/your-org/market-data-service/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/market-data-service/actions)
 
 ## Role in the Architecture
